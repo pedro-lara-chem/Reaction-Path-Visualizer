@@ -79,13 +79,13 @@ The script automatically creates a new folder for every run, timestamped to prev
 
 Inside this folder, you will find:
 
-PES_2D_Matplotlib_Full.png: High-resolution static 2D plot of the PES.
+* **PES_2D_Matplotlib_Full.png**: High-resolution static 2D plot of the PES.
 
-PES_2D_Matplotlib_Zoom.png: (Optional) Zoomed-in view of excited states if energetic separation allows.
+* **PES_2D_Matplotlib_Zoom.png**: (Optional) Zoomed-in view of excited states if energetic separation allows.
 
-PES_3D_plot.gltf: An interactive 3D model file. This can be opened in Windows 3D Viewer, Blender, or online GLTF viewers.
+* **PES_3D_plot.gltf**: An interactive 3D model file. This can be opened in Windows 3D Viewer, Blender, or online GLTF viewers.
 
-PES_3D_animation_*.gif: Individual animated GIFs for every deactivation pathway found (e.g., S2 to S0).
+* **PES_3D_animation_*.gif**: Individual animated GIFs for every deactivation pathway found (e.g., S2 to S0).
 
 ## 📄 License
 This project is distributed under the MIT License.
