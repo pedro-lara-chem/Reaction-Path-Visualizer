@@ -19,7 +19,7 @@ A Python tool for visualizing chemical Potential Energy Surfaces (PES), calculat
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/YOUR_USERNAME/PES-Plotter.git](https://github.com/YOUR_USERNAME/PES-Plotter.git)
+    git clone https://github.com/pedro-lara-chem/Reaction-Path-Visualizer.git
     cd PES-Plotter
     ```
 
