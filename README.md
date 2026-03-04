@@ -20,7 +20,7 @@ A Python tool for visualizing chemical Potential Energy Surfaces (PES), calculat
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/pedro-lara-chem/Reaction-Path-Visualizer.git
-    cd PES-Plotter
+    cd Reaction-Path-Visualizer
     ```
 
 2.  **Install dependencies:**
@@ -35,12 +35,12 @@ You can run the script in several modes depending on your needs.
 ### 1. GUI Mode (Interactive)
 This is the default mode. It opens a graphical interface (Tkinter) where you can manually enter the number of states, minima, transition states, and crossing points.
 ```bash
-python src/Final_PES_plotter.py
+python src/PES_plotter.py
 ```
 ### 2. File Mode (Batch Processing)
 Use the -f flag to load reaction data directly from a CSV file. This is ideal for reproducing plots without re-entering data manually.
 ```bash
-python src/Final_PES_plotter.py -f data/example.csv
+python src/PES_plotter.py -f data/example.csv
 ```
 An example CSV file is provided in the data/ folder to show the required format.
 
@@ -49,7 +49,7 @@ Use the --test flag to run the script with built-in dummy data. This is useful f
 
 ```bash
 
-python src/Final_PES_plotter.py --test
+python src/PES_plotter.py --test
 ```
 ### 4. Advanced Options
 You can customize the visualization style using the command line arguments.
@@ -66,13 +66,13 @@ Example:
 
 ```bash
 
-python src/Final_PES_plotter.py --mesh-type gaussian
+python src/PES_plotter.py --mesh-type gaussian
 ```
 View Help: To see a full list of available arguments and options:
 
 ```bash
 
-python src/Final_PES_plotter.py --help
+python src/PES_plotter.py --help
 ```
 ## 📂 Output
 The script automatically creates a new folder for every run, timestamped to prevent overwriting previous results (e.g., PES_Plot_2023-10-27_14-30-00).
