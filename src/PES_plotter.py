@@ -101,11 +101,11 @@ class StateBuilder:
         """Adds a guide point used only for spline interpolation."""
         self.raw_points.append((rc, energy))
 
-    def add_crossing(self, rc: float, energy: float, coupled_state: str, id: str, type_: str):
-        """Adds a crossing point (CI or ISC) to the state."""
+    def add_crossing(self, rc: float, energy: float, coupled_states: List[str], id: str, type_: str):
+        """Adds a crossing point (CI or ISC) involving multiple states."""
         self.crossings.append({
             'rc': rc, 'energy': energy,
-            'coupled_state': coupled_state,
+            'coupled_states': coupled_states, # Changed to plural list
             'id': id,
             'type': type_
         })
@@ -166,9 +166,26 @@ class PESInputGUI:
         self.ci_points_by_id = {}
         # A predefined colorblind-friendly color palette (based on Paul Tol's schemes) suitable for projectors.
         self.color_palette = [
-            '#332288', '#117733', '#44AA99', '#88CCEE', 
-            '#DDCC77', '#CC6677', '#AA4499', '#882255', 
-            '#999933', '#661100'
+            '#E69F00',  # Orange - S0
+            '#56B4E9',  # Sky Blue - S1
+            '#009E73',  # Bluish Green - S2
+            '#F0E442',  # Yellow - S3
+            '#0072B2',  # Blue - T1
+            '#D55E00',  # Vermillion - T2
+            '#CC79A7',  # Reddish Purple - T3
+            '#999999',  # Gray - T4
+            '#882255',  # Wine - S4
+            '#117733',  # Dark Green - S5
+            '#332288',  # Dark Blue - T5
+            '#44AA99',  # Teal - S6
+            '#DDCC77',  # Sand - T6
+            '#AA4499',  # Purple - S7
+            '#661100',  # Brown - T7
+            '#88CCEE',  # Light Blue - S8
+            '#FFD8B1',  # Peach - T8
+            '#A9A9A9',  # Dark Gray - S9
+            '#BFEF45',  # Lime - T9
+            '#DAA520'   # Goldenrod - S10
         ]
         self.color_index = 0
 
@@ -308,31 +325,34 @@ def get_data_from_file(filepath):
         elif ptype == 'guide':
             builder.add_guide_point(rc, energy)
         elif ptype in ['CI', 'ISC']:
-            builder.add_crossing(rc, energy, row['coupled_state'], row['id'], ptype)
+            # Handles strings like "S1, T1, S0" by splitting them into a list
+            coupled_list = [s.strip() for s in str(row['coupled_state']).split(',')]
+            builder.add_crossing(rc, energy, coupled_list, row['id'], ptype)
 
     processed_state_data = {state: builder.finalize() for state, builder in builders.items()}
 
-    color_palette = ['#D60270', 
-                    '#9B4F96',  
-                    '#0038A8', 
-                    '#F58231', 
-                    '#FFE119', 
-                    '#469990',  
-                    '#9A6324',  
-                    '#808000',  
-                    '#FFD8B1',  
-                    '#A9A9A9',  
-                    '#BFEF45',  
-                    '#AAFFC3',  
-                    '#DAA520',  
-                    '#FFFAC8',  
-                    '#7FFFD4',  
-                    '#F0E68C',  
-                    '#D2B48C',  
-                    '#FF7F50',  
-                    '#7FFF00', 
-                    '#D2691E'   
-                    ]
+    color_palette = [
+            '#E69F00',  # Orange - S0
+            '#56B4E9',  # Sky Blue - S1
+            '#009E73',  # Bluish Green - S2
+            '#F0E442',  # Yellow - S3
+            '#0072B2',  # Blue - T1
+            '#D55E00',  # Vermillion - T2
+            '#CC79A7',  # Reddish Purple - T3
+            '#999999',  # Gray - T4
+            '#882255',  # Wine - S4
+            '#117733',  # Dark Green - S5
+            '#332288',  # Dark Blue - T5
+            '#44AA99',  # Teal - S6
+            '#DDCC77',  # Sand - T6
+            '#AA4499',  # Purple - S7
+            '#661100',  # Brown - T7
+            '#88CCEE',  # Light Blue - S8
+            '#FFD8B1',  # Peach - T8
+            '#A9A9A9',  # Dark Gray - S9
+            '#BFEF45',  # Lime - T9
+            '#DAA520'   # Goldenrod - S10
+        ]
     state_colors = {state: color_palette[i % len(color_palette)] for i, state in enumerate(states)}
 
     class MockGUI:
@@ -625,17 +645,20 @@ def find_deactivation_path_recursive(start_rc: float, start_state: str, gui_data
            c for c in available_crossings 
            if search_range_rc[0] <= c['rc'] <= search_range_rc[1]
        ]
-
        if crossings_on_path:
            next_crossing = min(crossings_on_path, key=lambda c: abs(c['rc'] - start_rc))
+    
+            # Defaults to the first state listed in your 'coupled_states' list
+           target_state = next_crossing['coupled_states'][0] 
+
            path_segments.append({
-               "rc_start": start_rc, "rc_end": next_crossing['rc'], "spline": spline,
-               "start_state": start_state, "end_state": next_crossing['coupled_state']
-           })
+                "rc_start": start_rc, "rc_end": next_crossing['rc'], "spline": spline,
+                "start_state": start_state, "end_state": next_crossing['coupled_states'][0]
+            })
            visited_obstacles.add(next_crossing['id'])
            further_path = find_deactivation_path_recursive(
-               next_crossing['rc'], next_crossing['coupled_state'], gui_data, interpolated_paths, visited_obstacles
-           )
+                next_crossing['rc'], next_crossing['coupled_states'][0], gui_data, interpolated_paths, visited_obstacles
+            )
            path_segments.extend(further_path)
            return path_segments
 
@@ -660,11 +683,11 @@ def find_deactivation_path_recursive(start_rc: float, start_state: str, gui_data
             next_crossing = min(accessible_crossings, key=lambda c: abs(c['rc'] - start_rc))
             path_segments.append({
                 "rc_start": start_rc, "rc_end": next_crossing['rc'], "spline": spline,
-                "start_state": start_state, "end_state": next_crossing['coupled_state']
+                "start_state": start_state, "end_state": next_crossing['coupled_states'][0]
             })
             visited_obstacles.add(next_crossing['id'])
             further_path = find_deactivation_path_recursive(
-                next_crossing['rc'], next_crossing['coupled_state'], gui_data, interpolated_paths, visited_obstacles
+                next_crossing['rc'], next_crossing['coupled_states'][0], gui_data, interpolated_paths, visited_obstacles
             )
             path_segments.extend(further_path)
             return path_segments
@@ -703,13 +726,17 @@ def find_deactivation_path_recursive(start_rc: float, start_state: str, gui_data
             best_escape_route = obstacle
     
     if best_escape_route and lowest_true_barrier < 0.15:
+        # Check if the escape route is a crossing or just a TS in the same state
+        # If it's a TS, it won't have 'coupled_states', so we default to the current state
+        target_state = best_escape_route.get('coupled_states', [start_state])[0]
+
         path_segments.append({
             "rc_start": start_rc, "rc_end": best_escape_route['rc'], "spline": spline,
-            "start_state": start_state, "end_state": best_escape_route['coupled_state']
+            "start_state": start_state, "end_state": target_state
         })
         visited_obstacles.add(best_escape_route['id'])
         further_path = find_deactivation_path_recursive(
-            best_escape_route['rc'], best_escape_route['coupled_state'], gui_data, interpolated_paths, visited_obstacles
+            best_escape_route['rc'], target_state, gui_data, interpolated_paths, visited_obstacles
         )
         path_segments.extend(further_path)
 
@@ -719,151 +746,197 @@ def _create_single_2d_plot(ax, interpolated_paths, gui_data, ylim=None):
     """
     Helper function to generate a single 2D plot on a given Matplotlib axis.
     Features:
-      - Simulates bi-colored text by aligning two text objects at the center.
-      - Energy label is centered relative to the marker, not the text parts.
-      - Increased offsets to prevent labels from touching markers.
-      - Deterministic placement (no adjust_text) for stability.
-      - High z-order (10) for text to ensure it appears ON TOP of markers (zorder 5).
+      - Uses data coordinates (textcoords='data') to prevent adjust_text from throwing labels off-screen.
+      - Builds multi-colored crossing labels explicitly at the final adjusted dummy positions.
+      - Allows labels to overlap lines but prevents text-on-text overlapping.
     """
     plotted_crossing_ids = set()
     plot_lines = []
-    MARKER_SIZE = 22 
+    MARKER_SIZE = 28
     
-    # Text background to ensure readability over lines
-    text_bbox = dict(boxstyle='round,pad=0.1', fc='white', alpha=0.7, ec='none')
+    texts_to_adjust = []
+    crossing_data_map = {} # Maps dummy Annotation -> dictionary of parts to draw later
+    
+    text_bbox = dict(boxstyle='round,pad=0.2', fc='white', alpha=0.8, ec='none')
 
-    # Helper: Get state label with math formatting (e.g., S_1)
     def format_state_label_content(state_name):
         match = re.match(r'([ST])(\d+)', state_name)
-        if match:
-            return f'${match.group(1)}_{{{match.group(2)}}}$'
+        if match: return f'${match.group(1)}_{{{match.group(2)}}}$'
         return state_name
+
+    # Calculate a reasonable Y offset (in eV) based on the data to keep labels anchored properly
+    y_offset_val = (ylim[1] - ylim[0]) * 0.05 if ylim else 0.3
 
     # --- Step 1: Plot Curves ---
     for state, path in interpolated_paths.items():
         state_color = gui_data.state_colors[state]
-        raw_data = gui_data.state_data[state]
-        
-        # Legend label
-        label_for_legend = f"{format_state_label_content(state)}"
-
         if len(path['rc']) > 0:
-            line, = ax.plot(path['rc'], path['energy'], label=label_for_legend, color=state_color, linewidth=2.5)
+            line, = ax.plot(path['rc'], path['energy'], label=format_state_label_content(state), color=state_color, linewidth=3.0)
             plot_lines.append(line)
 
-        # --- Step 2: Plot Points & Add Labels ---
+    # --- Step 2: Plot Points & Add Single Labels / Dummies ---
+    for state, path in interpolated_paths.items():
+        state_color = gui_data.state_colors[state]
+        raw_data = gui_data.state_data[state]
         
-        # 1. Minima -> Label BELOW (Offset -40)
-        if calc_minima := path.get('calc_minima', []):
-            for i, (m_rc, m_e, m_e_user) in enumerate(sorted(calc_minima, key=lambda m: m[0])):
-                if ylim is None or (ylim[0] <= m_e <= ylim[1]):
-                    suffix = f"-{chr(65 + i)}" if len(calc_minima) > 1 else ""
-                    label = f"{format_state_label_content(state)}{suffix}\n{m_e_user:.2f}"
-                    
-                    # Marker (zorder=5)
-                    ax.plot(m_rc, m_e, marker='o', color=state_color, markersize=MARKER_SIZE, zorder=5)
-                    
-                    # Label (zorder=10) -> Draws ON TOP of marker
-                    ax.annotate(label, xy=(m_rc, m_e), xytext=(0, -40), 
-                                textcoords='offset points', ha='center', va='top',
-                                fontsize=18, color=state_color, fontweight='bold',
-                                bbox=text_bbox, zorder=10)
+        # 1. Minima (Labels below point)
+        for i, (m_rc, m_e, m_e_user) in enumerate(sorted(path.get('calc_minima', []), key=lambda m: m[0])):
+            if ylim is None or (ylim[0] <= m_e <= ylim[1]):
+                ax.plot(m_rc, m_e, marker='o', color=state_color, markersize=MARKER_SIZE, markeredgecolor='black', zorder=5)
+                suffix = f"-{chr(65 + i)}" if len(path.get('calc_minima', [])) > 1 else ""
+                label = f"{format_state_label_content(state)}{suffix}\n{m_e_user:.2f}"
+                
+                text = ax.annotate(
+                    label, xy=(m_rc, m_e), xytext=(m_rc, m_e - y_offset_val),
+                    textcoords='data', ha='center', va='top',
+                    fontsize=24, color=state_color, fontweight='bold', bbox=text_bbox, zorder=10
+                )
+                texts_to_adjust.append(text)
 
-        # 2. TS -> Label ABOVE (Offset +30)
-        if calc_saddles := path.get('calc_saddles', []):
-            for i, (ts_rc, ts_e, ts_e_user) in enumerate(sorted(calc_saddles, key=lambda t: t[0])):
-                if ylim is None or (ylim[0] <= ts_e <= ylim[1]):
-                    suffix = f"-{chr(65 + i)}" if len(calc_saddles) > 1 else ""
-                    label = f"TS{suffix}\n{ts_e_user:.2f}"
-                    
-                    ax.plot(ts_rc, ts_e, marker='D', color=state_color, markersize=MARKER_SIZE, zorder=5)
-                    
-                    ax.annotate(label, xy=(ts_rc, ts_e), xytext=(0, 30), 
-                                textcoords='offset points', ha='center', va='bottom',
-                                fontsize=18, color=state_color, fontweight='bold',
-                                bbox=text_bbox, zorder=10)
+        # 2. TS (Labels above point)
+        for i, (ts_rc, ts_e, ts_e_user) in enumerate(sorted(path.get('calc_saddles', []), key=lambda t: t[0])):
+            if ylim is None or (ylim[0] <= ts_e <= ylim[1]):
+                ax.plot(ts_rc, ts_e, marker='D', color=state_color, markersize=MARKER_SIZE, markeredgecolor='black', zorder=5)
+                suffix = f"-{chr(65 + i)}" if len(path.get('calc_saddles', [])) > 1 else ""
+                label = f"TS{suffix}\n{ts_e_user:.2f}"
+                
+                text = ax.annotate(
+                    label, xy=(ts_rc, ts_e), xytext=(ts_rc, ts_e + y_offset_val),
+                    textcoords='data', ha='center', va='bottom',
+                    fontsize=24, color=state_color, fontweight='bold', bbox=text_bbox, zorder=10
+                )
+                texts_to_adjust.append(text)
 
-        # 3. FC -> Label ABOVE (Offset +30)
+        # 3. FC (Labels above point)
         if fc := raw_data.get('franck_condon'):
             if ylim is None or (ylim[0] <= fc['energy'] <= ylim[1]):
+                ax.plot(fc['rc'], fc['energy'], marker='s', color=state_color, markersize=MARKER_SIZE, markeredgecolor='black', zorder=5)
                 label = f"FC {format_state_label_content(state)}\n{fc['energy']:.2f}"
                 
-                ax.plot(fc['rc'], fc['energy'], marker='s', color=state_color, markersize=MARKER_SIZE, zorder=5)
+                text = ax.annotate(
+                    label, xy=(fc['rc'], fc['energy']), xytext=(fc['rc'], fc['energy'] + y_offset_val),
+                    textcoords='data', ha='center', va='bottom',
+                    fontsize=24, color=state_color, fontweight='bold', bbox=text_bbox, zorder=10
+                )
+                texts_to_adjust.append(text)
+
+        # 4. Crossings (Invisible dummy label with visible arrow)
+        for cross in raw_data.get('crossings', []):
+            if cross['id'] in plotted_crossing_ids: continue
+            if ylim is None or (ylim[0] <= cross['energy'] <= ylim[1]):
+                involved = sorted(list(set([state] + cross['coupled_states'])), key=get_state_ordering, reverse=True)
+                num_states = len(involved)
+                dynamic_marker = max(16, MARKER_SIZE - (num_states * 1))
+                dynamic_font = max(16, 28 - (num_states * 1))
+
+                for i, s_name in enumerate(involved):
+                    s_color = gui_data.state_colors.get(s_name, 'black')
+                    m_shape = '^' if i % 2 == 0 else 'v'
+                    ax.plot(cross['rc'], cross['energy'], marker=m_shape, color=s_color, 
+                            markersize=dynamic_marker + (i*2), markeredgecolor='black', zorder=5-i)
+
+                label_parts = [f"{cross['type']} "]
+                part_colors = ['black']
+                for i, s_name in enumerate(involved):
+                    label_parts.append(format_state_label_content(s_name))
+                    part_colors.append(gui_data.state_colors.get(s_name, 'black'))
+                    if i < len(involved) - 1:
+                        label_parts.append("/")
+                        part_colors.append('black')
+
+                # Create an invisible dummy string representing the bounding box weight
+                dummy_string = "".join(label_parts) + f"\n{cross['energy']:.2f}"
                 
-                ax.annotate(label, xy=(fc['rc'], fc['energy']), xytext=(0, 30), 
-                            textcoords='offset points', ha='center', va='bottom',
-                            fontsize=18, color=state_color, fontweight='bold',
-                            bbox=text_bbox, zorder=10)
-
-        # 4. Crossings -> Bi-Colored Label Trick
-        if crossings := raw_data.get('crossings', []):
-            for cross in crossings:
-                if cross['id'] in plotted_crossing_ids: continue
+                # The text is invisible, but the box is visible
+                dummy = ax.annotate(
+                    dummy_string,
+                    xy=(cross['rc'], cross['energy']),
+                    xytext=(cross['rc'], cross['energy'] + y_offset_val * 1.5),
+                    textcoords='data',
+                    ha='center', va='center',
+                    fontsize=dynamic_font, fontweight='bold',
+                    color='none',   # Makes the text characters invisible
+                    bbox=text_bbox, # Renders the white semitransparent box
+                    zorder=9
+                )
+                texts_to_adjust.append(dummy)
                 
-                if ylim is None or (ylim[0] <= cross['energy'] <= ylim[1]):
-                    s1, s2 = state, cross['coupled_state']
-                    
-                    if s1 not in gui_data.state_colors or s2 not in gui_data.state_colors:
-                        continue 
+                # Store data to draw the real text later
+                crossing_data_map[dummy] = {
+                    'parts': label_parts,
+                    'colors': part_colors,
+                    'font': dynamic_font,
+                    'energy': cross['energy']
+                }
+                plotted_crossing_ids.add(cross['id'])
 
-                    # Determine hierarchy using global helper function
-                    s1_order = get_state_ordering(s1)
-                    s2_order = get_state_ordering(s2)
-                    if s1_order > s2_order:
-                        higher, lower = s1, s2
-                    else:
-                        higher, lower = s2, s1
-                    
-                    ch = gui_data.state_colors[higher] 
-                    cl = gui_data.state_colors[lower]
-                    lbl_h = format_state_label_content(higher)
-                    lbl_l = format_state_label_content(lower)
+    # --- Step 3: Run adjust_text ---
+    if texts_to_adjust:
+        # Gentle push - only moving text away from other text, ignoring lines
+        adjust_text(
+            texts_to_adjust,
+            ax=ax,
+            expand_text=(1.05, 1.05),
+            force_text=(0.02, 0.05),
+            lim=150
+        )
 
-                    # --- Markers (zorder=5) ---
-                    ax.plot(cross['rc'], cross['energy'], marker='^', color=ch, markersize=MARKER_SIZE, 
-                            markeredgecolor='black', markeredgewidth=0.5, zorder=5)
-                    ax.plot(cross['rc'], cross['energy'], marker='v', color=cl, markersize=MARKER_SIZE, 
-                            markeredgecolor='black', markeredgewidth=0.5, zorder=5)
+    # --- Step 4: Draw multi-colored parts PRECISELY where the dummy landed ---
+    if crossing_data_map:
+        fig = ax.figure
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        
+        for dummy, data in crossing_data_map.items():
+            # Get the exact data coordinates where adjust_text anchored the dummy
+            final_x, final_y = dummy.get_position()
+            
+            parts = data['parts']
+            colors = data['colors']
+            font = data['font']
+            energy_val = data['energy']
+            
+            # Measure widths to perfectly center the text parts horizontally
+            widths_pts = []
+            temp_texts = []
+            for part in parts:
+                t = ax.text(final_x, final_y, part, fontsize=font, fontweight='bold', alpha=0.0)
+                bb = t.get_window_extent(renderer=renderer)
+                widths_pts.append(bb.width * 72.0 / fig.dpi)
+                temp_texts.append(t)
+            for t in temp_texts: t.remove()
+            
+            current_x_offset = -sum(widths_pts) / 2
+            
+            # Draw the colored parts just above the center point
+            for part, color, w in zip(parts, colors, widths_pts):
+                ax.annotate(
+                    part,
+                    xy=(final_x, final_y),
+                    xytext=(current_x_offset, 2), # Vertical stack offset
+                    textcoords='offset points',
+                    ha='left', va='bottom',
+                    fontsize=font, color=color, fontweight='bold', zorder=10
+                )
+                current_x_offset += w
+                
+            # Draw energy box just below the center point
+            ax.annotate(
+                f"{energy_val:.2f}",
+                xy=(final_x, final_y),
+                xytext=(0, -2), # Vertical stack offset
+                textcoords='offset points',
+                ha='center', va='top',
+                fontsize=font, color='black', fontweight='bold', bbox=text_bbox, zorder=10
+            )
 
-                    # --- Bi-Color Text Logic (zorder=10) ---
-                    # We position everything relative to the MARKER (cross['rc'], cross['energy'])
-                    
-                    y_offset_text = 45   # Top row (States)
-                    y_offset_energy = 25 # Bottom row (Energy)
-
-                    # 1. Left Text: "CI High" (Aligned Right to center 0)
-                    # We nudge it left by -1 point to create a tiny visual gap
-                    ax.annotate(f"{cross['type']} {lbl_h}", 
-                                xy=(cross['rc'], cross['energy']), xytext=(-1, y_offset_text), 
-                                textcoords='offset points', ha='right', va='bottom',
-                                fontsize=18, color=ch, fontweight='bold',
-                                bbox=text_bbox, zorder=10)
-
-                    # 2. Right Text: "/Low" (Aligned Left to center 0)
-                    # We nudge it right by +1 point
-                    ax.annotate(f"/{lbl_l}", 
-                                xy=(cross['rc'], cross['energy']), xytext=(1, y_offset_text), 
-                                textcoords='offset points', ha='left', va='bottom',
-                                fontsize=18, color=cl, fontweight='bold',
-                                bbox=text_bbox, zorder=10)
-
-                    # 3. Energy (Centered below text, relative to MARKER)
-                    # This ensures the energy is centered on the point, regardless of text length above
-                    ax.annotate(f"{cross['energy']:.2f}", 
-                                xy=(cross['rc'], cross['energy']), xytext=(0, y_offset_energy), 
-                                textcoords='offset points', ha='center', va='bottom',
-                                fontsize=18, color=cl, fontweight='bold',
-                                bbox=text_bbox, zorder=10)
-                    
-                    plotted_crossing_ids.add(cross['id'])
-
-    # --- Step 3: Cleanup ---
+    # --- Step 5: Cleanup ---
     ax.axis('off')
-    if ylim:
-        ax.set_ylim(*ylim)
+    if ylim: ax.set_ylim(*ylim)
+    ax.legend(handles=plot_lines, fontsize=36, frameon=True, fancybox=True, shadow=True)
+    plt.tight_layout()
 
-    ax.legend(handles=plot_lines, fontsize=20)
-    
+
 def plot_2d_matplotlib(interpolated_paths, gui_data, output_dir):
     """
     Creates two 2D plots:
@@ -972,17 +1045,21 @@ def create_deactivation_animations(output_dir, interpolated_paths, gui_data, mes
                     fc_present = True
                     s_fc = s_data.get('franck_condon')
                     center = project_point_to_well(s_fc['rc'], s_fc['energy']) if is_well else (s_fc['rc'], 0.0, s_fc['energy'])
-                    plotter.add_mesh(pv.Sphere(radius=0.08, center=center), color='magenta')
+                    # plotter.add_mesh(pv.Sphere(radius=0.08, center=center), color='magenta')
                 
                 if s_data.get('TS'):
                     ts_present = True
                     for ts_rc, ts_e in s_data.get('TS'):
                         center = project_point_to_well(ts_rc, ts_e) if is_well else (ts_rc, 0.0, ts_e)
-                        plotter.add_mesh(pv.Sphere(radius=0.08, center=center), color='cyan')
+                        # plotter.add_mesh(pv.Sphere(radius=0.08, center=center), color='cyan')
 
                 if s_cross := s_data.get('crossings'):
                     for cross in s_cross:
-                        if cross['coupled_state'] in involved_states:
+                        # Check if ANY of the states involved in the multi-state crossing
+                        # are part of the deactivation path we are currently animating
+                        is_involved = any(st in involved_states for st in cross['coupled_states'])
+                        
+                        if is_involved:
                             if cross['type'] == 'CI':
                                 ci_present = True
                                 color = 'red'
@@ -990,7 +1067,7 @@ def create_deactivation_animations(output_dir, interpolated_paths, gui_data, mes
                                 isc_present = True
                                 color = 'blue'
                             center = project_point_to_well(cross['rc'], cross['energy']) if is_well else (cross['rc'], 0.0, cross['energy'])
-                            plotter.add_mesh(pv.Sphere(radius=0.1, center=center), color=color)
+                            # plotter.add_mesh(pv.Sphere(radius=0.1, center=center), color=color)
         
         # --- Add proxy actors for the legend, placing them near the action ---
         # Find a reference point from the involved states to place the proxies
@@ -1001,12 +1078,13 @@ def create_deactivation_animations(output_dir, interpolated_paths, gui_data, mes
                 ref_center = (path['rc'][0], 0.0, path['energy'][0])
                 break # Found a valid point, no need to search more
 
-        if fc_present: plotter.add_mesh(pv.Sphere(radius=0.001, center=ref_center), color='magenta', label='FC Point')
-        if ts_present: plotter.add_mesh(pv.Sphere(radius=0.001, center=ref_center), color='cyan', label='TS Point')
-        if ci_present: plotter.add_mesh(pv.Sphere(radius=0.001, center=ref_center), color='red', label='CI Point')
-        if isc_present: plotter.add_mesh(pv.Sphere(radius=0.001, center=ref_center), color='blue', label='ISC Point')
+        # if fc_present: plotter.add_mesh(pv.Sphere(radius=0.001, center=ref_center), color='magenta', label='FC Point')
+        # if ts_present: plotter.add_mesh(pv.Sphere(radius=0.001, center=ref_center), color='cyan', label='TS Point')
+        # if ci_present: plotter.add_mesh(pv.Sphere(radius=0.001, center=ref_center), color='red', label='CI Point')
+        # if isc_present: plotter.add_mesh(pv.Sphere(radius=0.001, center=ref_center), color='blue', label='ISC Point')
 
-        plotter.add_title(f'Deactivation from {state_name}'); plotter.set_background('white'); plotter.add_legend()
+        plotter.add_title(f'Deactivation from {state_name}'); plotter.set_background('white')
+        # plotter.add_legend()
         plotter.view_xz()
         plotter.camera.Azimuth(30) 
         plotter.camera.Elevation(30) 
@@ -1094,7 +1172,7 @@ def resolve_collisions_by_truncation(interpolated_paths, gui_data):
                         
                         all_crossings = gui_data.state_data[state1_name].get('crossings', []) + gui_data.state_data[state2_name].get('crossings', [])
                         for cross_info in all_crossings:
-                            if cross_info['coupled_state'] in (state1_name, state2_name) and abs(cross_info['rc'] - cross_rc) < cross_tolerance:
+                            if any(s in (state1_name, state2_name) for s in cross_info['coupled_states']) and abs(cross_info['rc'] - cross_rc) < cross_tolerance:
                                 is_known_crossing = True
                                 break
                         
@@ -1316,10 +1394,16 @@ def main():
             
             if crossings := data.get('crossings'):
                 for cross in crossings:
-                    if cross['type'] == 'CI': ci_present = True; color = 'red'
-                    else: isc_present = True; color = 'blue'
-                    center = project_point_to_well(cross['rc'], cross['energy']) if is_well else (cross['rc'], 0.0, cross['energy'])
-                    static_plotter.add_mesh(pv.Sphere(radius=0.1, center=center), color=color)
+                    # Check if the coupled states are part of the loaded data
+                    valid_coupling = any(s in gui.state_data.keys() for s in cross['coupled_states'])
+                    
+                    if valid_coupling:
+                        if cross['type'] == 'CI': ci_present = True; color = 'red'
+                        else: isc_present = True; color = 'blue'
+                        
+                        # Project and add the sphere to the 3D plot
+                        center = project_point_to_well(cross['rc'], cross['energy']) if is_well else (cross['rc'], 0.0, cross['energy'])
+                        static_plotter.add_mesh(pv.Sphere(radius=0.1, center=center), color=color)
 
     print("  -> Adding curved deactivation arrows to static plot...")
     for state_name, data in gui.state_data.items():
