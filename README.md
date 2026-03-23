@@ -52,22 +52,20 @@ Use the --test flag to run the script with built-in dummy data. This is useful f
 python src/PES_plotter.py --test
 ```
 ### 4. Advanced Options
-You can customize the visualization style using the command line arguments.
+You can customize the execution and output of the PES Plotter using the following command-line flags:
 
-Change Mesh Type: The default mesh is a flat ribbon. You can change this to 3D wells using the --mesh-type argument:
+* `-f`, `--file <path>`: Run in file mode, reading PES data from the specified CSV file.
+* `-t`, `--test`: Run in test mode using predefined internal data (bypasses the GUI).
+* `-m`, `--mesh-type <type>`: Select the 3D surface style. Options are `ribbon` (default), `parabolic`, or `gaussian`.
+* `-b`, `--barrier-labels`: Changes all "TS" (Transition State) text to "Barrier" in the generated 2D and 3D plot labels and legends. This is highly recommended when plotting energy maxima derived from Nudged Elastic Band (NEB) calculations, where the point may be a barrier rather than a verified transition state.
 
-ribbon (Default)
+### Examples
 
-parabolic (Harmonic oscillator style)
-
-gaussian (Gaussian shaped wells)
-
-Example:
-
+**Standard GUI execution (default flat ribbons):**
 ```bash
-
-python src/PES_plotter.py --mesh-type gaussian
+python Final_PES_plotter.py
 ```
+
 View Help: To see a full list of available arguments and options:
 
 ```bash
