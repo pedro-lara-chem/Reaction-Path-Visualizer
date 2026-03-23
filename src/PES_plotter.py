@@ -742,7 +742,7 @@ def find_deactivation_path_recursive(start_rc: float, start_state: str, gui_data
 
     return path_segments
 
-def _create_single_2d_plot(ax, interpolated_paths, gui_data, ylim=None):
+def _create_single_2d_plot(ax, interpolated_paths, gui_data, ylim=None, use_barrier_labels=False):
     """
     Helper function to generate a single 2D plot on a given Matplotlib axis.
     Features:
@@ -798,7 +798,8 @@ def _create_single_2d_plot(ax, interpolated_paths, gui_data, ylim=None):
             if ylim is None or (ylim[0] <= ts_e <= ylim[1]):
                 ax.plot(ts_rc, ts_e, marker='D', color=state_color, markersize=MARKER_SIZE, markeredgecolor='black', zorder=5)
                 suffix = f"-{chr(65 + i)}" if len(path.get('calc_saddles', [])) > 1 else ""
-                label = f"TS{suffix}\n{ts_e_user:.2f}"
+                ts_prefix = "Barrier" if use_barrier_labels else "TS"
+                label = f"{ts_prefix}{suffix}\n{ts_e_user:.2f}"
                 
                 text = ax.annotate(
                     label, xy=(ts_rc, ts_e), xytext=(ts_rc, ts_e + y_offset_val),
@@ -937,7 +938,7 @@ def _create_single_2d_plot(ax, interpolated_paths, gui_data, ylim=None):
     plt.tight_layout()
 
 
-def plot_2d_matplotlib(interpolated_paths, gui_data, output_dir):
+def plot_2d_matplotlib(interpolated_paths, gui_data, output_dir, use_barrier_labels=False):
     """
     Creates two 2D plots:
     1. A full plot showing all states.
@@ -948,7 +949,7 @@ def plot_2d_matplotlib(interpolated_paths, gui_data, output_dir):
 
     # --- Plot 1: Full Frame ---
     fig_full, ax_full = plt.subplots(figsize=(20, 16))
-    _create_single_2d_plot(ax_full, interpolated_paths, gui_data)
+    _create_single_2d_plot(ax_full, interpolated_paths, gui_data, use_barrier_labels=use_barrier_labels)
     save_path_full = os.path.join(output_dir, 'PES_2D_Matplotlib_Full.png')
     plt.savefig(save_path_full, bbox_inches='tight', pad_inches=0.1, dpi=1000)
     plt.close(fig_full)
@@ -989,7 +990,7 @@ def plot_2d_matplotlib(interpolated_paths, gui_data, output_dir):
         # Define the y-axis limits for the zoom
         ylim = (min_excited_energy - ENERGY_BUFFER, max_excited_energy + ENERGY_BUFFER)
         
-        _create_single_2d_plot(ax_zoom, interpolated_paths, gui_data, ylim=ylim)
+        _create_single_2d_plot(ax_zoom, interpolated_paths, gui_data, ylim=ylim, use_barrier_labels=use_barrier_labels)
         
         save_path_zoom = os.path.join(output_dir, 'PES_2D_Matplotlib_Zoom.png')
         plt.savefig(save_path_zoom, bbox_inches='tight', pad_inches=0.1, dpi=1000)
@@ -1244,6 +1245,7 @@ def main():
     parser.add_argument("-f", "--file", type=str, help="Path to a CSV file with PES data.")
     parser.add_argument("-t", "--test", action="store_true", help="Run in TEST_MODE with predefined data.")
     parser.add_argument("-m", "--mesh-type", type=str, default="ribbon", choices=['ribbon', 'parabolic', 'gaussian'], help="Type of 3D mesh for the PES.")
+    parser.add_argument("-b", "--barrier-labels", action="store_true", help="Label transition states as 'Barrier' instead of 'TS' in plots and legends.")
     args = parser.parse_args()
 
     # --- 2. Get Input Data
@@ -1456,7 +1458,9 @@ def main():
 
     # --- Add proxy actors for the legend ---
     if fc_present: static_plotter.add_mesh(pv.Sphere(radius=0.001), color='magenta', label='FC Point')
-    if ts_present: static_plotter.add_mesh(pv.Sphere(radius=0.001), color='cyan', label='TS Point')
+    if ts_present: 
+        ts_label = 'Barrier Point' if args.barrier_labels else 'TS Point'
+        static_plotter.add_mesh(pv.Sphere(radius=0.001), color='cyan', label=ts_label)
     if ci_present: static_plotter.add_mesh(pv.Sphere(radius=0.001), color='red', label='CI Point')
     if isc_present: static_plotter.add_mesh(pv.Sphere(radius=0.001), color='blue', label='ISC Point')
 
@@ -1468,7 +1472,7 @@ def main():
     static_plotter.close()
 
     # --- 6. Generate Animations and 2D Plot ---
-    create_deactivation_animations(output_dir, interpolated_paths, gui, mesh_type=args.mesh_type)
+    create_deactivation_animations(output_dir, interpolated_paths, gui, mesh_type=args.mesh_type, use_barrier_labels=args.barrier_labels)
     plot_2d_matplotlib(interpolated_paths, gui, output_dir)
     print("\n--- Script Finished Successfully ---")
 
