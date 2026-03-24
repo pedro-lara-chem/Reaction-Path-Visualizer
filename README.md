@@ -39,23 +39,23 @@ You can run the script via an interactive GUI, or provide data rapidly using a C
 
 **1. Interactive GUI Mode (Default)**
 Run without arguments to open the Tkinter GUI and input states, minima, CIs, and ISCs manually.
-`python Final_PES_plotter.py`
+`python PES_plotter.py`
 
 **2. CSV File Mode**
 Bypass the GUI and generate plots instantly from a prepared CSV file.
-`python Final_PES_plotter.py -f my_data.csv`
+`python PES_plotter.py -f my_data.csv`
 
 **3. Change 3D Mesh Type**
 Choose between `ribbon` (default), `parabolic`, or `gaussian` energy wells for the 3D plots.
-`python Final_PES_plotter.py -m gaussian`
+`python PES_plotter.py -m gaussian`
 
 **4. Barriers Mode**
 Replace the default "TS" nomenclature with "Barrier" in all visual outputs.
-`python Final_PES_plotter.py -b`
+`python PES_plotter.py -b`
 
 **5. Test Mode**
 Run a hardcoded test scenario (useful for debugging collision resolution).
-`python Final_PES_plotter.py -t`
+`python PES_plotter.py -t`
 
 ---
 
@@ -89,21 +89,12 @@ To use the `-f` flag, format your CSV file like the example below. The tool uses
 | S1    | minima     | 1.5 | 3.2    |               |           |
 | S1    | TS         | 0.8 | 3.8    |               |           |
 | S1    | guide      | 2.5 | 3.9    |               |           |
-| S1    | CI         | 2.0 | 3.5    | S2, S0        | CI-1      |
+| S1    | CI         | 2.0 | 3.5    | "S2, S0"      | CI-S1S0   |
 | T1    | ISC        | 1.8 | 3.0    | S1            | ISC-S1-T1 |
 
 * **point_type options:** `minima`, `TS`, `FC`, `guide`, `CI`, `ISC`.
 * **coupled_state:** Only required for CIs and ISCs. Can be a single state (`S0`) or comma-separated for multi-state with quotes ("S1, T1").
 * **id:** A unique identifier for crossings to prevent duplicating logic when checking both interacting states.
-
-## 📂 Outputs
-
-Running the script creates a timestamped folder (e.g., `PES_Plot_my_data_2026-03-24_14-30-00/`) containing:
-1. **`PES_2D_Matplotlib_Full.png`**: The complete 2D diagram.
-2. **`PES_2D_Matplotlib_Zoom.png`**: A dynamically generated zoomed plot (only created if excited states are >2.0 eV above S0).
-3. **`PES_3D_plot.gltf`**: A 3D interactive model of the surfaces.
-4. **`PES_3D_animation_[State].gif`**: Animated pathfinding balls traversing the topology from FC points to minima.
-
 
 ## 📂 Output
 The script automatically creates a new folder for every run, timestamped to prevent overwriting previous results (e.g., PES_Plot_2023-10-27_14-30-00).
