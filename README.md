@@ -80,7 +80,7 @@ If the spline of S2 accidentally dips below S1 in a region where you haven't def
 
 ## 📄 CSV Formatting Guide
 
-To use the `-f` flag, format your CSV file like the example below. The tool uses Pandas, so it is flexible, but requires specific column headers: `state`, `point_type`, `rc`, `energy`, `coupled_state`, and `id`.
+To use the `-f` flag, format your CSV file like the example below. The tool uses Pandas, so it is flexible, but requires specific column headers: `state`, `point_type`, `rc`, `energy`, `coupled_state`, and `id`. This is just a small example in the real one, you should add the CI and ISC for all states involved for a proper use of the interpolation as it is done for each state separated.
 
 | state | point_type | rc  | energy | coupled_state | id        |
 |-------|------------|-----|--------|---------------|-----------|
@@ -89,7 +89,7 @@ To use the `-f` flag, format your CSV file like the example below. The tool uses
 | S1    | minima     | 1.5 | 3.2    |               |           |
 | S1    | TS         | 0.8 | 3.8    |               |           |
 | S1    | guide      | 2.5 | 3.9    |               |           |
-| S1    | CI         | 2.0 | 3.5    | "S2, S0"      | CI-S1S0   |
+| S1    | CI         | 2.0 | 3.5    | "S2, S0"      | CI-S2S1S0 |
 | T1    | ISC        | 1.8 | 3.0    | S1            | ISC-S1-T1 |
 
 * **point_type options:** `minima`, `TS`, `FC`, `guide`, `CI`, `ISC`.
