@@ -1,19 +1,22 @@
-# Reaction-Path-Visualizer
-A Python tool for visualizing chemical Potential Energy Surfaces (PES), calculating deactivation pathways, and generating 3D animations of deactivation paths, 3D PES and 2D PES.
 
-# PES-Plotter: 3D Potential Energy Surface Visualization
+# Advanced Potential Energy Surface (PES) Visualization Tool
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
+An advanced Python tool for generating, analyzing, and animating 1D Potential Energy Surface (PES) diagrams for complex chemical reactions. 
 
-**PES-Plotter** is an advanced visualization tool designed for computational chemists. It generates interactive 3D visualizations, 2D publication-quality plots, and animated deactivation pathways for complex chemical reactions involving Conical Intersections (CIs) and Intersystem Crossings (ISCs).
+Whether you need publication-quality 2D Matplotlib plots, interactive 3D PyVista surfaces, or animated GIFs of multi-step deactivation cascades, this tool provides a comprehensive suite for photochemical and ground-state reaction visualization.
 
-## 🌟 Features
+## ✨ Key Features
 
-* **Interactive 3D Meshes:** Visualize surfaces as Ribbons, Parabolic Wells, or Gaussian Wells using PyVista.
-* **Pathway Finding:** Recursive algorithm to trace multi-step deactivation cascades (e.g., S2 → S1 → T1 → S0).
-* **Collision Detection:** Automatically detects and resolves spline collisions between states using truncation logic.
-* **Publication Ready:** Generates high-resolution 2D plots using Matplotlib with `adjustText` for clean labeling.
-* **Animation:** Generates specific GIFs showing the ball-rolling deactivation mechanism.
+* **Multi-State Deactivation Cascades**: Features a recursive pathfinding algorithm to automatically trace and visualize complex cascades (e.g., S2 -> S1 -> T1 -> S0).
+* **Multi-State Crossings (CIs & ISCs)**: Fully supports Conical Intersections (CIs) and Intersystem Crossings (ISCs) involving *more than two states* simultaneously.
+* **Guide Points for Splines**: Add non-critical "guide points" to perfectly shape your cubic spline interpolations without them being flagged as Minima or Transition States.
+* **Publication-Quality 2D Plots**: Generates high-DPI 2D Matplotlib graphs. Automatically produces a "zoomed-in" plot of excited states if they are energetically well-separated (>2.0 eV) from the S0 minimum.
+* **Multicolored Labels**: Smart 2D plotting automatically generates beautifully aligned, multi-colored labels and split markers for state crossings.
+* **Barriers Mode**: Optional flag to dynamically rename all "TS" (Transition State) labels to "Barrier" across all plots and legends.
+* **3D Interactive Topologies**: Render PES surfaces as flat `ribbon`, `parabolic`, or `gaussian` meshes in 3D.
+* **Automated Collision Resolution**: Intelligently detects and resolves unphysical accidental spline crossings by safely truncating curves before they collide.
+* **Deactivation Animations**: Automatically exports `.gif` animations showing a ball rolling down the PES, changing color as it crosses states.
+
 
 ## 🛠 Installation
 
@@ -30,48 +33,78 @@ A Python tool for visualizing chemical Potential Energy Surfaces (PES), calculat
 
 ## 🚀 Usage
 
-You can run the script in several modes depending on your needs.
+You can run the script via an interactive GUI, or provide data rapidly using a CSV file.
 
-### 1. GUI Mode (Interactive)
-This is the default mode. It opens a graphical interface (Tkinter) where you can manually enter the number of states, minima, transition states, and crossing points.
-```bash
-python src/PES_plotter.py
-```
-### 2. File Mode (Batch Processing)
-Use the -f flag to load reaction data directly from a CSV file. This is ideal for reproducing plots without re-entering data manually.
-```bash
-python src/PES_plotter.py -f data/example.csv
-```
-An example CSV file is provided in the data/ folder to show the required format.
+### Basic Commands
 
-### 3. Test Mode
-Use the --test flag to run the script with built-in dummy data. This is useful for quickly verifying that the installation is correct and all libraries are working.
+**1. Interactive GUI Mode (Default)**
+Run without arguments to open the Tkinter GUI and input states, minima, CIs, and ISCs manually.
+`python Final_PES_plotter.py`
 
-```bash
+**2. CSV File Mode**
+Bypass the GUI and generate plots instantly from a prepared CSV file.
+`python Final_PES_plotter.py -f my_data.csv`
 
-python src/PES_plotter.py --test
-```
-### 4. Advanced Options
-You can customize the execution and output of the PES Plotter using the following command-line flags:
+**3. Change 3D Mesh Type**
+Choose between `ribbon` (default), `parabolic`, or `gaussian` energy wells for the 3D plots.
+`python Final_PES_plotter.py -m gaussian`
 
-* `-f`, `--file <path>`: Run in file mode, reading PES data from the specified CSV file.
-* `-t`, `--test`: Run in test mode using predefined internal data (bypasses the GUI).
-* `-m`, `--mesh-type <type>`: Select the 3D surface style. Options are `ribbon` (default), `parabolic`, or `gaussian`.
-* `-b`, `--barrier-labels`: Changes all "TS" (Transition State) text to "Barrier" in the generated 2D and 3D plot labels and legends. This is highly recommended when plotting energy maxima derived from Nudged Elastic Band (NEB) calculations, where the point may be a barrier rather than a verified transition state.
+**4. Barriers Mode**
+Replace the default "TS" nomenclature with "Barrier" in all visual outputs.
+`python Final_PES_plotter.py -b`
 
-### Examples
+**5. Test Mode**
+Run a hardcoded test scenario (useful for debugging collision resolution).
+`python Final_PES_plotter.py -t`
 
-**Standard GUI execution (default flat ribbons):**
-```bash
-python Final_PES_plotter.py
-```
+---
 
-View Help: To see a full list of available arguments and options:
+## 🛠️ Deep Dive: Advanced Functionalities
 
-```bash
+### 1. Guide Points
+Standard spline interpolation can sometimes behave unpredictably between widely spaced critical points. You can define **Guide Points** (`point_type: guide`). These points strictly anchor the curve's shape without being mathematically treated as a minimum or transition state by the pathfinding algorithm.
 
-python src/PES_plotter.py --help
-```
+### 2. Multi-State ISCs and CIs
+Photochemical pathways frequently feature regions where three or more states become degenerate. The tool supports multi-state crossings. In your CSV, simply list the coupled states separated by commas (e.g., `S1, T1, S0`). The recursive pathfinder and 3D animator will correctly route the deactivation cascade through these complex nodes.
+
+### 3. Smart Multicolored Labels (2D Plots)
+When generating static 2D plots, overlapping text can ruin a figure. This tool utilizes `adjustText` to prevent label overlaps. Furthermore, for crossings involving multiple states, the tool creates **custom multi-colored text labels and alternating marker shapes** (e.g., a "CI S1/S0" label where "S1" is blue and "S0" is orange, perfectly stacked above the intersection).
+
+### 4. Barriers Mode (`-b`)
+Depending on your subfield (e.g., general kinetics vs. strict transition state theory), "Barrier" might be the preferred terminology over "TS" (Transition State). Passing the `-b` or `--barrier-labels` flag dynamically updates the Matplotlib text annotations, PyVista 3D legends, and exported files to use "Barrier".
+
+### 5. Automated Collision Truncation
+If the spline of S2 accidentally dips below S1 in a region where you haven't defined a crossing, the script will automatically run a brentq root-finding check. It identifies the unphysical intersection and truncates the least important spline (safeguarding your defined critical points) to ensure state order integrity.
+
+---
+
+## 📄 CSV Formatting Guide
+
+To use the `-f` flag, format your CSV file like the example below. The tool uses Pandas, so it is flexible, but requires specific column headers: `state`, `point_type`, `rc`, `energy`, `coupled_state`, and `id`.
+
+| state | point_type | rc  | energy | coupled_state | id        |
+|-------|------------|-----|--------|---------------|-----------|
+| S0    | minima     | 0.0 | 0.0    |               |           |
+| S1    | FC         | 0.0 | 4.5    |               |           |
+| S1    | minima     | 1.5 | 3.2    |               |           |
+| S1    | TS         | 0.8 | 3.8    |               |           |
+| S1    | guide      | 2.5 | 3.9    |               |           |
+| S1    | CI         | 2.0 | 3.5    | S2, S0        | CI-1      |
+| T1    | ISC        | 1.8 | 3.0    | S1            | ISC-S1-T1 |
+
+* **point_type options:** `minima`, `TS`, `FC`, `guide`, `CI`, `ISC`.
+* **coupled_state:** Only required for CIs and ISCs. Can be a single state (`S0`) or comma-separated for multi-state with quotes ("S1, T1").
+* **id:** A unique identifier for crossings to prevent duplicating logic when checking both interacting states.
+
+## 📂 Outputs
+
+Running the script creates a timestamped folder (e.g., `PES_Plot_my_data_2026-03-24_14-30-00/`) containing:
+1. **`PES_2D_Matplotlib_Full.png`**: The complete 2D diagram.
+2. **`PES_2D_Matplotlib_Zoom.png`**: A dynamically generated zoomed plot (only created if excited states are >2.0 eV above S0).
+3. **`PES_3D_plot.gltf`**: A 3D interactive model of the surfaces.
+4. **`PES_3D_animation_[State].gif`**: Animated pathfinding balls traversing the topology from FC points to minima.
+
+
 ## 📂 Output
 The script automatically creates a new folder for every run, timestamped to prevent overwriting previous results (e.g., PES_Plot_2023-10-27_14-30-00).
 
@@ -84,6 +117,9 @@ Inside this folder, you will find:
 * **PES_3D_plot.gltf**: An interactive 3D model file. This can be opened in Windows 3D Viewer, Blender, or online GLTF viewers.
 
 * **PES_3D_animation_*.gif**: Individual animated GIFs for every deactivation pathway found (e.g., S2 to S0).
+
+## 🤝 Contributing
+Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
 
 ## 📄 License
 This project is distributed under the MIT License.
