@@ -1472,8 +1472,8 @@ def main():
     static_plotter.close()
 
     # --- 6. Generate Animations and 2D Plot ---
-    create_deactivation_animations(output_dir, interpolated_paths, gui, mesh_type=args.mesh_type, use_barrier_labels=args.barrier_labels)
-    plot_2d_matplotlib(interpolated_paths, gui, output_dir)
+    create_deactivation_animations(output_dir, interpolated_paths, gui, mesh_type=args.mesh_type)
+    plot_2d_matplotlib(interpolated_paths, gui, output_dir, use_barrier_labels=args.barrier_labels)
     print("\n--- Script Finished Successfully ---")
 
 # This ensures the main() function is called only when the script is executed directly.
